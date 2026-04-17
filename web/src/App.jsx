@@ -10,6 +10,7 @@ export default function App() {
   const [loading, setLoading] = useState(false)
   const [decisionData, setDecisionData] = useState(null)
   const [stage, setStage] = useState('等待输入')
+  const [orderPlaced, setOrderPlaced] = useState(false)
 
   const handleSend = useCallback(async (text) => {
     const userMsg = { role: 'user', text, structuredData: null }
@@ -46,6 +47,7 @@ export default function App() {
   }, [handleSend])
 
   const handleConfirmOrder = useCallback(() => {
+    setOrderPlaced(true)
     handleSend('确认下单')
   }, [handleSend])
 
@@ -57,6 +59,7 @@ export default function App() {
     setMessages([])
     setDecisionData(null)
     setStage('等待输入')
+    setOrderPlaced(false)
   }, [])
 
   return (
@@ -72,6 +75,7 @@ export default function App() {
             onSelectProduct={handleSelectProduct}
             onConfirmOrder={handleConfirmOrder}
             onCancelOrder={handleCancelOrder}
+            orderPlaced={orderPlaced}
           />
         </div>
         {/* Right: Decision panel */}

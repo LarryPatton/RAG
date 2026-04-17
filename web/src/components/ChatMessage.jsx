@@ -2,7 +2,7 @@ import ReactMarkdown from 'react-markdown'
 import ProductCard from './ProductCard'
 import OrderConfirmModal from './OrderConfirmModal'
 
-export default function ChatMessage({ role, text, structuredData, onSelectProduct, onConfirmOrder, onCancelOrder }) {
+export default function ChatMessage({ role, text, structuredData, onSelectProduct, onConfirmOrder, onCancelOrder, orderPlaced }) {
   const isUser = role === 'user'
 
   return (
@@ -54,6 +54,7 @@ export default function ChatMessage({ role, text, structuredData, onSelectProduc
               data={structuredData}
               onConfirm={onConfirmOrder}
               onCancel={onCancelOrder}
+              disabled={orderPlaced}
             />
           </div>
         )}

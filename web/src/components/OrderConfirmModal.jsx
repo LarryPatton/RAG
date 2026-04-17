@@ -1,6 +1,10 @@
-export default function OrderConfirmModal({ data, onConfirm, onCancel }) {
+export default function OrderConfirmModal({ data, onConfirm, onCancel, disabled }) {
   const priceComp = data.price_comparison || {}
-  const minPlatform = Object.entries(priceComp).sort((a, b) => a[1] - b[1])[0]
+  // 只保留数字类型的价格
+  const validPriceEntries = Object.entries(priceComp).filter(
+    ([, price]) => typeof price === 'number' && !isNaN(price)
+  )
+  const minPlatform = validPriceEntries.sort((a, b) => a[1] - b[1])[0]
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-lg p-5 max-w-sm">
@@ -28,11 +32,11 @@ export default function OrderConfirmModal({ data, onConfirm, onCancel }) {
       </div>
 
       {/* Price comparison */}
-      {Object.keys(priceComp).length > 0 && (
+      {validPriceEntries.length > 0 && (
         <div className="mt-3 p-2 bg-blue-50 rounded-lg">
           <p className="text-xs text-gray-500 mb-1">💰 比价</p>
           <div className="flex gap-3 text-xs">
-            {Object.entries(priceComp).map(([platform, price]) => (
+            {validPriceEntries.map(([platform, price]) => (
               <span key={platform} className={`${
                 minPlatform && platform === minPlatform[0] ? 'font-bold text-green-600' : 'text-gray-500'
               }`}>
@@ -55,18 +59,26 @@ export default function OrderConfirmModal({ data, onConfirm, onCancel }) {
 
       {/* Buttons */}
       <div className="flex gap-3 mt-4">
-        <button
-          onClick={onCancel}
-          className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition"
-        >
-          取消
-        </button>
-        <button
-          onClick={onConfirm}
-          className="flex-1 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition"
-        >
-          确认下单
-        </button>
+        {disabled ? (
+          <div className="w-full py-2 text-center text-sm text-gray-400 bg-gray-100 rounded-lg border border-gray-200">
+            已下单 ✓
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={onCancel}
+              className="flex-1 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50 transition"
+            >
+              取消
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition"
+            >
+              确认下单
+            </button>
+          </>
+        )}
       </div>
     </div>
   )

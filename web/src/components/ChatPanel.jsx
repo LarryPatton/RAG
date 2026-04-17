@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react'
 import ChatMessage from './ChatMessage'
 import ChatInput from './ChatInput'
 
-export default function ChatPanel({ messages, loading, onSend, onSelectProduct, onConfirmOrder, onCancelOrder }) {
+export default function ChatPanel({ messages, loading, onSend, onSelectProduct, onConfirmOrder, onCancelOrder, orderPlaced }) {
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -29,6 +29,7 @@ export default function ChatPanel({ messages, loading, onSend, onSelectProduct, 
             onSelectProduct={onSelectProduct}
             onConfirmOrder={onConfirmOrder}
             onCancelOrder={onCancelOrder}
+            orderPlaced={orderPlaced}
           />
         ))}
         {loading && (
