@@ -26,7 +26,9 @@ export default function App() {
         structuredData: res.structured_data,
       }
       setMessages((prev) => [...prev, assistantMsg])
-      setStage(res.stage)
+      if (res.stage && res.stage !== '未知') {
+        setStage(res.stage)
+      }
 
       if (res.structured_data) {
         setDecisionData(res.structured_data)
