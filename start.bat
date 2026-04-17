@@ -36,11 +36,18 @@ if errorlevel 1 (
 
 :skip_ollama
 
-REM --- Step 2: Warmup index ---
+REM --- Step 2: Build or load index ---
 echo.
-echo [2/3] Building vector index...
+echo [2/3] Checking vector index...
 
-python -c "import json; from rag.indexer import build_index; data=json.load(open('data/products.json','r',encoding='utf-8')); print(f'  Loaded {len(data)} products'); build_index(data); print('  Index ready.')"
+python -c "from rag.indexer import index_exists; print('EXISTS' if index_exists() else 'MISSING')" 2>nul | findstr "EXISTS" >nul 2>&1
+if errorlevel 1 (
+    echo   Index not found. Building from 500 products...
+    echo   (First time only, takes ~30 seconds)
+    python -c "import json; from rag.indexer import build_index; data=json.load(open('data/products.json','r',encoding='utf-8')); print(f'  Loaded {len(data)} products'); build_index(data); print('  Index built and saved to ./qdrant_data/')"
+) else (
+    echo   Index found on disk. Skipping build.
+)
 
 if errorlevel 1 (
     echo   ERROR: Index build failed. Check dependencies.

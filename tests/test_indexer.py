@@ -1,3 +1,8 @@
+import os
+import shutil
+import tempfile
+from unittest import mock
+
 from rag.indexer import build_index
 
 
@@ -32,9 +37,15 @@ def test_build_index_returns_queryable_index():
             "description": "测试用运动耳机"
         }
     ]
-    index = build_index(products)
-    assert index is not None
-    query_engine = index.as_query_engine(similarity_top_k=2)
-    response = query_engine.query("降噪耳机")
-    assert response is not None
-    assert len(str(response)) > 0
+    # Use a temp directory so tests don't pollute the real index cache
+    tmp_dir = tempfile.mkdtemp()
+    try:
+        with mock.patch("rag.indexer.CACHE_DIR", tmp_dir), \
+             mock.patch("rag.indexer.CACHE_FILE", os.path.join(tmp_dir, "embeddings.pkl")):
+            index = build_index(products)
+            assert index is not None
+            retriever = index.as_retriever(similarity_top_k=2)
+            results = retriever.retrieve("降噪耳机")
+            assert len(results) > 0
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
