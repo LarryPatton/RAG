@@ -40,6 +40,9 @@ def test_product_search_tool_returns_results():
     result = search_tool.invoke("降噪耳机 通勤")
     assert isinstance(result, str)
     assert len(result) > 0
+    assert "商品" in result
+    assert "品牌" in result
+    assert "价格" in result
 
 
 def test_place_order_returns_confirmation():
