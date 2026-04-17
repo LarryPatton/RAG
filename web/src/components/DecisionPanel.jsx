@@ -5,9 +5,9 @@ import ComparisonBar from './ComparisonBar'
 
 export default function DecisionPanel({ data, stage }) {
   const hasRecommendation = data?.type === 'recommendation'
-  const process = hasRecommendation ? data.decision_process : null
-  const profile = hasRecommendation ? data.user_profile : null
-  const comparisons = hasRecommendation ? data.comparisons : null
+  const process = data?.decision_process ?? null
+  const profile = data?.user_profile ?? null
+  const comparisons = data?.comparisons ?? null
 
   return (
     <div className="p-4 space-y-5">
