@@ -1,76 +1,67 @@
 @echo off
-chcp 65001 >nul
-REM ============================================
-REM RAG Shopping Agent - 一键启动 (Windows)
-REM ============================================
-
-setlocal enabledelayedexpansion
-
-set "SCRIPT_DIR=%~dp0"
-set "PID_FILE=%SCRIPT_DIR%.pids"
-set "OLLAMA_MODEL=qwen2.5:14b"
+chcp 65001 >nul 2>&1
+cd /d "%~dp0"
 
 echo ========================================
-echo   RAG 购物助手 - 启动中...
+echo   RAG Shopping Agent - Starting...
 echo ========================================
-
-REM 清理旧 PID 文件
-echo. > "%PID_FILE%"
-
-REM --- Step 1: 检查并启动 Ollama ---
 echo.
-echo [1/3] 检查 Ollama...
+
+REM --- Step 1: Check Ollama ---
+echo [1/3] Checking Ollama...
 
 where ollama >nul 2>&1
-if %errorlevel%==0 (
-    REM 检查 ollama 是否已在运行
-    curl -s http://localhost:11434/api/tags >nul 2>&1
-    if !errorlevel!==0 (
-        echo   Ollama 已在运行
-    ) else (
-        echo   启动 Ollama 服务...
-        start /B ollama serve >nul 2>&1
-        echo   等待 Ollama 就绪...
-        timeout /t 5 /nobreak >nul
-    )
-
-    REM 检查模型
-    ollama list 2>nul | findstr /C:"%OLLAMA_MODEL%" >nul 2>&1
-    if !errorlevel!==0 (
-        echo   模型 %OLLAMA_MODEL% 已就绪
-    ) else (
-        echo   模型 %OLLAMA_MODEL% 未找到，正在拉取...
-        ollama pull %OLLAMA_MODEL%
-    )
-) else (
-    echo   未找到 Ollama，请先安装: https://ollama.ai
-    echo   你仍然可以使用 Qwen API 模式运行
+if errorlevel 1 (
+    echo   Ollama not found. Install from https://ollama.ai
+    echo   You can still use Qwen API mode.
+    goto :skip_ollama
 )
 
-REM --- Step 2: 预热索引 ---
+curl -s http://localhost:11434/api/tags >nul 2>&1
+if errorlevel 1 (
+    echo   Starting Ollama...
+    start "" ollama serve
+    timeout /t 5 /nobreak >nul
+) else (
+    echo   Ollama is running.
+)
+
+ollama list 2>nul | findstr "qwen2.5:14b" >nul 2>&1
+if errorlevel 1 (
+    echo   Pulling qwen2.5:14b ...
+    ollama pull qwen2.5:14b
+) else (
+    echo   Model qwen2.5:14b ready.
+)
+
+:skip_ollama
+
+REM --- Step 2: Warmup index ---
 echo.
-echo [2/3] 预热向量索引...
+echo [2/3] Building vector index...
 
-cd /d "%SCRIPT_DIR%"
-python -c "import json; from rag.indexer import build_index; products = json.load(open('data/products.json', 'r', encoding='utf-8')); print(f'  加载 {len(products)} 条商品数据'); index = build_index(products); print('  向量索引构建完成')"
+python -c "import json; from rag.indexer import build_index; data=json.load(open('data/products.json','r',encoding='utf-8')); print(f'  Loaded {len(data)} products'); build_index(data); print('  Index ready.')"
 
-REM --- Step 3: 启动 Streamlit ---
+if errorlevel 1 (
+    echo   ERROR: Index build failed. Check dependencies.
+    pause
+    exit /b 1
+)
+
+REM --- Step 3: Start Streamlit ---
 echo.
-echo [3/3] 启动 Streamlit 应用...
+echo [3/3] Starting Streamlit...
 
-start "RAG-Shopping-Agent" /B streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false
+start "RAG-Agent-Streamlit" streamlit run app.py --server.headless true --server.port 8501 --browser.gatherUsageStats false
 
 timeout /t 3 /nobreak >nul
 
 echo.
 echo ========================================
-echo   启动成功！
+echo   Started successfully!
 echo ========================================
 echo.
-echo   浏览器访问: http://localhost:8501
+echo   Open browser: http://localhost:8501
+echo   Stop service: stop.bat
 echo.
-echo   停止服务:   stop.bat
-echo.
-
-REM 保持窗口打开
 pause
