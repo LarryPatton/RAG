@@ -6,24 +6,22 @@ echo   RAG Shopping Agent - Stopping...
 echo ========================================
 echo.
 
-REM --- 1. Kill Streamlit ---
-echo [1/2] Stopping Streamlit...
-taskkill /FI "WINDOWTITLE eq RAG-Agent-Streamlit*" /F >nul 2>&1
-
-REM Kill all python processes running streamlit
+echo [1/2] Stopping FastAPI...
+taskkill /FI "WINDOWTITLE eq RAG-FastAPI*" /F >nul 2>&1
 for /f "tokens=2 delims=," %%i in ('tasklist /FI "IMAGENAME eq python.exe" /FO CSV /NH 2^>nul') do (
-    wmic process where "ProcessId=%%~i" get CommandLine 2>nul | findstr /C:"streamlit" >nul 2>&1
-    if not errorlevel 1 (
-        taskkill /F /PID %%~i >nul 2>&1
-    )
+    wmic process where "ProcessId=%%~i" get CommandLine 2>nul | findstr /C:"uvicorn" >nul 2>&1
+    if not errorlevel 1 taskkill /F /PID %%~i >nul 2>&1
 )
-echo   Streamlit stopped. Memory released.
+echo   FastAPI stopped.
 
-REM --- 2. Ollama ---
 echo.
-echo [2/2] Ollama status...
-echo   Ollama kept running (shared resource).
-echo   To free GPU memory, run: taskkill /F /IM ollama.exe
+echo [2/2] Stopping Vite dev server...
+taskkill /FI "WINDOWTITLE eq RAG-Vite*" /F >nul 2>&1
+for /f "tokens=2 delims=," %%i in ('tasklist /FI "IMAGENAME eq node.exe" /FO CSV /NH 2^>nul') do (
+    wmic process where "ProcessId=%%~i" get CommandLine 2>nul | findstr /C:"vite" >nul 2>&1
+    if not errorlevel 1 taskkill /F /PID %%~i >nul 2>&1
+)
+echo   Vite stopped.
 
 echo.
 echo ========================================
@@ -31,5 +29,6 @@ echo   All services stopped.
 echo ========================================
 echo.
 echo   Restart: start.bat
+echo   Free GPU: taskkill /F /IM ollama.exe
 echo.
 pause
