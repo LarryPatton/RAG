@@ -1,3 +1,4 @@
+import ReactMarkdown from 'react-markdown'
 import ProductCard from './ProductCard'
 import OrderConfirmModal from './OrderConfirmModal'
 
@@ -19,7 +20,9 @@ export default function ChatMessage({ role, text, structuredData, onSelectProduc
           }`}>
             {/* Text content */}
             {text && (
-              <div className="text-sm whitespace-pre-wrap leading-relaxed">{text}</div>
+              isUser
+                ? <div className="text-sm whitespace-pre-wrap leading-relaxed">{text}</div>
+                : <ReactMarkdown className="text-sm prose prose-sm max-w-none prose-invert-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">{text}</ReactMarkdown>
             )}
           </div>
         </div>
