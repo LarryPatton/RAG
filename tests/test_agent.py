@@ -11,7 +11,10 @@ def test_system_prompt_contains_key_instructions():
     assert "product_search" in SYSTEM_PROMPT
     assert "place_order" in SYSTEM_PROMPT
     assert "[阶段]" in SYSTEM_PROMPT
-    assert "Markdown 表格" in SYSTEM_PROMPT
+    assert "decision_process" in SYSTEM_PROMPT
+    assert "user_profile" in SYSTEM_PROMPT
+    assert "order_confirm" in SYSTEM_PROMPT
+    assert "recommendation" in SYSTEM_PROMPT
 
 
 def test_create_shopping_agent_compiles():
