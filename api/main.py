@@ -10,8 +10,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],  # Vite dev server
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(chat_router)

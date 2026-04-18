@@ -15,12 +15,20 @@ def get_llm(mode: str):
         return ChatOllama(
             model="qwen2.5:14b",
             base_url="http://localhost:11434",
+            timeout=120,
         )
     elif mode == "qwen-api":
         from langchain_community.chat_models.tongyi import ChatTongyi
+        api_key = os.getenv("DASHSCOPE_API_KEY")
+        if not api_key:
+            raise ValueError(
+                "DASHSCOPE_API_KEY environment variable is required for qwen-api mode. "
+                "Set it via: export DASHSCOPE_API_KEY=your_key"
+            )
         return ChatTongyi(
             model="qwen-plus",
-            dashscope_api_key=os.getenv("DASHSCOPE_API_KEY"),
+            dashscope_api_key=api_key,
+            request_timeout=120,
         )
     else:
         raise ValueError(f"Unknown LLM mode: {mode}. Use 'ollama' or 'qwen-api'.")

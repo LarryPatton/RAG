@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+  .header { padding: 24px 32px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { font-size: 18px; font-weight: 600; color: #f1f5f9; display: flex; align-items: center; gap: 10px; }
+  .header h1 span { color: #0ea5e9; }
+  .header .links { display: flex; gap: 12px; }
+  .header .links a { color: #94a3b8; text-decoration: none; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid #334155; transition: all .15s; }
+  .header .links a:hover { color: #e2e8f0; border-color: #475569; background: #1e293b; }
+  .main { padding: 24px 32px; display: flex; gap: 20px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; flex: 1; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+  .status-dot.online { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,.4); }
+  .status-dot.stopped { background: #ef4444; }
+  .status-dot.errored { background: #f59e0b; }
+  .proc-name { font-size: 20px; font-weight: 700; color: #f1f5f9; margin-bottom: 12px; display: flex; align-items: center; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .stat { background: #0f172a; border-radius: 8px; padding: 10px 12px; }
+  .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 16px; font-weight: 600; color: #e2e8f0; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+  .actions { display: flex; gap: 8px; }
+  .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; font-family: inherit; }
+  .btn-restart { background: #0ea5e9; color: #fff; }
+  .btn-restart:hover { background: #0284c7; }
+  .btn-stop { background: #334155; color: #e2e8f0; }
+  .btn-stop:hover { background: #475569; }
+  .btn-start { background: #10b981; color: #fff; }
+  .btn-start:hover { background: #059669; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-restart-all { background: #7c3aed; color: #fff; padding: 8px 20px; }
+  .btn-restart-all:hover { background: #6d28d9; }
+  .logs-section { padding: 0 32px 24px; }
+  .logs-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .logs-tabs { display: flex; gap: 4px; }
+  .logs-tab { padding: 6px 14px; border-radius: 6px; background: #1e293b; color: #94a3b8; border: 1px solid #334155; cursor: pointer; font-size: 12px; font-family: inherit; }
+  .logs-tab.active { background: #334155; color: #e2e8f0; border-color: #475569; }
+  .logs-box { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; font-family: 'JetBrains Mono', 'Consolas', monospace; font-size: 12px; line-height: 1.6; color: #94a3b8; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+  .refresh-info { font-size: 11px; color: #475569; }
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 20px; border-radius: 8px; font-size: 13px; color: #fff; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .toast.ok { background: #10b981; }
+  .toast.err { background: #ef4444; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span>&#9632;</span> RAG Shopping Agent</h1>
+  <div class="links">
+    <a href="http://localhost:5173" target="_blank">Frontend :5173</a>
+    <a href="http://localhost:8000/docs" target="_blank">API Docs :8000</a>
+    <button class="btn btn-restart-all" onclick="restartAll()">Restart All</button>
+  </div>
+</div>
+
+<div class="main" id="cards"></div>
+
+<div class="logs-section">
+  <div class="logs-header">
+    <div class="logs-tabs">
+      <button class="logs-tab active" onclick="switchLog('rag-api',this)">rag-api logs</button>
+      <button class="logs-tab" onclick="switchLog('rag-web',this)">rag-web logs</button>
+    </div>
+    <span class="refresh-info">Auto-refresh every 3s</span>
+  </div>
+  <div class="logs-box" id="logs">Loading...</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentLog = 'rag-api'
+
+function fmt(bytes) {
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' MB'
+  return (bytes / 1048576).toFixed(1) + ' GB'
+}
+
+function uptime(ts) {
+  if (!ts) return '-'
+  const s = Math.floor((Date.now() - ts) / 1000)
+  if (s < 60) return s + 's'
+  if (s < 3600) return Math.floor(s/60) + 'm ' + (s%60) + 's'
+  return Math.floor(s/3600) + 'h ' + Math.floor((s%3600)/60) + 'm'
+}
+
+function toast(msg, ok) {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.className = 'toast show ' + (ok ? 'ok' : 'err')
+  setTimeout(() => el.className = 'toast', 2000)
+}
+
+async function action(name, act) {
+  try {
+    const r = await fetch('/api/' + act + '/' + name, { method: 'POST' })
+    const d = await r.json()
+    toast(d.ok ? (name + ' ' + act + ' OK') : ('Failed: ' + d.error), d.ok)
+    setTimeout(refresh, 1000)
+  } catch(e) { toast('Error: ' + e.message, false) }
+}
+
+async function restartAll() {
+  try {
+    const r = await fetch('/api/restart-all', { method: 'POST' })
+    toast('All restarted', true)
+    setTimeout(refresh, 1500)
+  } catch(e) { toast('Error: ' + e.message, false) }
+}
+
+async function refresh() {
+  try {
+    const r = await fetch('/api/status')
+    const procs = await r.json()
+    const el = document.getElementById('cards')
+    el.innerHTML = procs.map(p => `
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">${p.name === 'rag-api' ? 'Backend API' : 'Frontend Dev'}</span>
+        </div>
+        <div class="proc-name">
+          <span class="status-dot ${p.status}"></span>
+          ${p.name}
+        </div>
+        <div class="stats">
+          <div class="stat"><div class="stat-label">Status</div><div class="stat-value">${p.status}</div></div>
+          <div class="stat"><div class="stat-label">PID</div><div class="stat-value">${p.pid || '-'}</div></div>
+          <div class="stat"><div class="stat-label">Uptime</div><div class="stat-value">${uptime(p.uptime)}</div></div>
+          <div class="stat"><div class="stat-label">Restarts</div><div class="stat-value">${p.restarts}</div></div>
+          <div class="stat"><div class="stat-label">CPU</div><div class="stat-value">${p.cpu}%</div></div>
+          <div class="stat"><div class="stat-label">Memory</div><div class="stat-value">${fmt(p.mem)}</div></div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-restart" onclick="action('${p.name}','restart')">Restart</button>
+          ${p.status === 'online'
+            ? `<button class="btn btn-stop" onclick="action('${p.name}','stop')">Stop</button>`
+            : `<button class="btn btn-start" onclick="action('${p.name}','start')">Start</button>`
+          }
+        </div>
+      </div>
+    `).join('')
+  } catch(e) {
+    document.getElementById('cards').innerHTML = '<div class="card"><p style="color:#ef4444">Cannot reach dashboard server</p></div>'
+  }
+}
+
+async function refreshLogs() {
+  try {
+    const r = await fetch('/api/logs/' + currentLog)
+    const text = await r.text()
+    const el = document.getElementById('logs')
+    const wasAtBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20
+    el.textContent = text || '(no logs yet)'
+    if (wasAtBottom) el.scrollTop = el.scrollHeight
+  } catch {}
+}
+
+function switchLog(name, btn) {
+  currentLog = name
+  document.querySelectorAll('.logs-tab').forEach(t => t.classList.remove('active'))
+  btn.classList.add('active')
+  refreshLogs()
+}
+
+refresh()
+refreshLogs()
+setInterval(refresh, 3000)
+setInterval(refreshLogs, 3000)
+</script>
+</body>
+</html>

@@ -1,3 +1,4 @@
+import { Check, AlertTriangle, User } from 'lucide-react'
 import { getBrandStyle } from '../constants/brands'
 
 export default function ProductCard({ product, onSelect }) {
@@ -5,12 +6,12 @@ export default function ProductCard({ product, onSelect }) {
   const stars = '★'.repeat(Math.floor(product.rating)) + '☆'.repeat(5 - Math.floor(product.rating))
 
   return (
-    <div className="w-72 flex-shrink-0 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition overflow-hidden">
+    <div className="w-72 flex-shrink-0 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition overflow-hidden">
       {/* Rank badge */}
       <div className="flex items-center gap-2 px-4 pt-3">
         <span className={`text-xs font-bold px-2 py-0.5 rounded ${
           product.rank === 1 ? 'bg-yellow-100 text-yellow-700' :
-          product.rank === 2 ? 'bg-gray-100 text-gray-600' :
+          product.rank === 2 ? 'bg-slate-100 text-slate-600' :
           'bg-orange-50 text-orange-600'
         }`}>
           #{product.rank}
@@ -26,10 +27,10 @@ export default function ProductCard({ product, onSelect }) {
           {product.brand}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+          <p className="text-sm font-medium text-slate-800 truncate">{product.name}</p>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-lg font-bold text-red-500">¥{product.price}</span>
-            <span className="text-xs text-yellow-500">{stars} {product.rating}</span>
+            <span className="text-lg font-bold font-mono text-red-600">¥{product.price}</span>
+            <span className="text-xs text-amber-500">{stars} {product.rating}</span>
           </div>
         </div>
       </div>
@@ -37,21 +38,24 @@ export default function ProductCard({ product, onSelect }) {
       {/* Pros & Cons */}
       <div className="px-4 pb-2 space-y-1">
         {product.pros?.map((pro, i) => (
-          <div key={i} className="flex items-center gap-1.5 text-xs text-green-700">
-            <span>✅</span><span>{pro}</span>
+          <div key={i} className="flex items-center gap-1.5 text-xs text-emerald-700">
+            <Check size={12} className="flex-shrink-0" />
+            <span>{pro}</span>
           </div>
         ))}
         {product.cons?.map((con, i) => (
           <div key={i} className="flex items-center gap-1.5 text-xs text-amber-600">
-            <span>⚠️</span><span>{con}</span>
+            <AlertTriangle size={12} className="flex-shrink-0" />
+            <span>{con}</span>
           </div>
         ))}
       </div>
 
       {/* Best for */}
       {product.best_for && (
-        <div className="mx-4 mb-2 text-xs text-gray-500 bg-gray-50 rounded px-2 py-1">
-          👤 适合：{product.best_for}
+        <div className="mx-4 mb-2 text-xs text-slate-500 bg-slate-50 rounded px-2 py-1 flex items-center gap-1.5">
+          <User size={12} className="flex-shrink-0" />
+          适合：{product.best_for}
         </div>
       )}
 
@@ -59,7 +63,7 @@ export default function ProductCard({ product, onSelect }) {
       <div className="px-4 pb-4">
         <button
           onClick={onSelect}
-          className="w-full py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
+          className="w-full py-2 bg-sky-500 text-white text-sm font-medium rounded-md hover:bg-sky-600 transition"
         >
           选择这款
         </button>

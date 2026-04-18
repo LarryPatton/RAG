@@ -1,21 +1,11 @@
 import json
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Query
 
+from data.loader import load_products
+
 router = APIRouter()
-
-_products = None
-
-
-def _load_products() -> list[dict]:
-    global _products
-    if _products is None:
-        path = Path(__file__).parent.parent.parent / "data" / "products.json"
-        with open(path, "r", encoding="utf-8") as f:
-            _products = json.load(f)
-    return _products
 
 
 @router.get("/api/products")
@@ -28,7 +18,7 @@ def list_products(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
 ):
-    products = _load_products()
+    products = load_products()
     filtered = products
 
     if brand:
@@ -51,7 +41,7 @@ def list_products(
 
 @router.get("/api/products/stats")
 def product_stats():
-    products = _load_products()
+    products = load_products()
     brands = sorted(set(p["brand"] for p in products))
     types = sorted(set(p["type"] for p in products))
     scenarios = sorted(set(s for p in products for s in p["scenario"]))

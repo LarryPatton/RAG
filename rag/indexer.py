@@ -1,7 +1,8 @@
 import json
 import os
-import pickle
 import time
+
+import numpy as np
 
 import rag.compat  # noqa: F401 — patches QdrantVectorStore for Python 3.14
 
@@ -13,7 +14,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core.llms import MockLLM
 
 CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "index_cache")
-CACHE_FILE = os.path.join(CACHE_DIR, "embeddings.pkl")
+CACHE_FILE = os.path.join(CACHE_DIR, "embeddings.npz")
 COLLECTION_NAME = "products"
 
 
@@ -70,10 +71,8 @@ def build_index(products: list[dict]) -> VectorStoreIndex:
 
     if _cache_exists():
         # Fast path: load pre-computed embeddings, insert directly via Qdrant client
-        with open(CACHE_FILE, "rb") as f:
-            cache = pickle.load(f)
-
-        vectors = cache["vectors"]
+        cache = np.load(CACHE_FILE, allow_pickle=False)
+        vectors = cache["vectors"].tolist()
         dim = len(vectors[0])
 
         client.create_collection(
@@ -126,8 +125,7 @@ def build_index(products: list[dict]) -> VectorStoreIndex:
     vectors = [p.vector for p in all_points]
 
     os.makedirs(CACHE_DIR, exist_ok=True)
-    with open(CACHE_FILE, "wb") as f:
-        pickle.dump({"vectors": vectors}, f)
+    np.savez(CACHE_FILE, vectors=np.array(vectors))
 
     return index
 
