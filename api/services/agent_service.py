@@ -210,6 +210,53 @@ class AgentService:
             lines.append(f"- {label}: {value}")
         return "\n".join(lines) + "\n\n"
 
+    def _auto_extract_decisions(self, texts: list[str]) -> dict[str, str]:
+        """Auto-extract user decisions from a list of user message texts.
+
+        Used when user_decisions is not explicitly provided (e.g. first turn
+        where user includes budget/type/scenario in one message).
+        """
+        import re as _re
+        decisions: dict[str, str] = {}
+        combined = " ".join(texts)
+
+        # Budget: "500以内", "500元以内", "1000以下", "200-500", "500左右"
+        budget_m = _re.search(r"(\d{2,5})\s*(元|块钱?)?\s*(以内|以下|左右)", combined)
+        if not budget_m:
+            budget_m = _re.search(r"(\d{3,5})\s*[-～~]\s*(\d{3,5})", combined)
+            if budget_m:
+                decisions["budget"] = f"¥{budget_m.group(1)}-{budget_m.group(2)}"
+        else:
+            decisions["budget"] = f"≤¥{budget_m.group(1)}"
+
+        # Type: earphone form factor
+        if _re.search(r"入耳", combined):
+            decisions["type"] = "入耳式"
+        elif _re.search(r"头戴", combined):
+            decisions["type"] = "头戴式"
+        elif _re.search(r"骨传导", combined):
+            decisions["type"] = "骨传导"
+        elif _re.search(r"耳挂", combined):
+            decisions["type"] = "耳挂式"
+
+        # Scenario
+        for scenario in ["通勤", "运动", "跑步", "办公", "游戏", "学习"]:
+            if scenario in combined:
+                decisions["scenario"] = scenario
+                break
+
+        # Noise cancellation
+        if _re.search(r"降噪|消噪|主动降", combined):
+            decisions["noise_cancellation"] = "需要降噪"
+
+        # Brand preference
+        for brand_kw in ["国产优先", "进口", "索尼", "Sony", "苹果", "AirPods", "华为", "小米"]:
+            if brand_kw in combined:
+                decisions["brand_preference"] = brand_kw
+                break
+
+        return decisions
+
     def _extract_decisions(self, structured_data: dict | None) -> dict[str, str] | None:
         """Extract user decisions from recommendation structured data."""
         if not structured_data or structured_data.get("type") != "recommendation":
@@ -255,6 +302,16 @@ class AgentService:
             }
         """
         self._ensure_agent(llm_mode)
+
+        # Auto-extract decisions from current message + history when not provided
+        # This ensures that info embedded in the first user message (e.g. "500以内入耳式通勤")
+        # is properly reflected as confirmed decisions in the prefix (V12 fix)
+        if not user_decisions:
+            all_texts = [msg.get("content", "") for msg in history if msg.get("role") == "user"]
+            all_texts.append(message)
+            auto_decisions = self._auto_extract_decisions(all_texts)
+            if auto_decisions:
+                user_decisions = auto_decisions
 
         # Build decision prefix for the current message
         decision_prefix = self._build_decision_prefix(user_decisions or {})
@@ -325,6 +382,14 @@ class AgentService:
           done           — {"type":"done"}
         """
         self._ensure_agent(llm_mode)
+
+        # Auto-extract decisions from current message + history when not provided
+        if not user_decisions:
+            all_texts = [msg.get("content", "") for msg in history if msg.get("role") == "user"]
+            all_texts.append(message)
+            auto_decisions = self._auto_extract_decisions(all_texts)
+            if auto_decisions:
+                user_decisions = auto_decisions
 
         # Build decision prefix for the current message
         decision_prefix = self._build_decision_prefix(user_decisions or {})

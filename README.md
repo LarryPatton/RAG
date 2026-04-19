@@ -37,7 +37,7 @@ RAG 检索   业务工具
 |------|------|------|
 | 大模型 | Qwen 2.5 (14B) / Qwen API | 理解意图、生成回复、自主决策 |
 | Agent | LangGraph | 编排决策流程、调用工具 |
-| 检索 | LlamaIndex + Qdrant | 500条商品的语义检索 |
+| 检索 | LlamaIndex + Qdrant | 1500条商品的语义检索 |
 | Embedding | BGE-small-zh | 中文向量化（本地免费） |
 | 前端 | Streamlit | 聊天界面 + 推理日志侧边栏 |
 
@@ -103,7 +103,7 @@ RAG/
 ├── tools/
 │   └── order.py            # Mock 下单工具
 ├── data/
-│   └── products.json       # 500条商品数据
+│   └── products.json       # 1500条商品数据
 ├── scripts/
 │   └── generate_products.py # 商品数据生成脚本
 ├── tests/                  # 单元测试（9个）
@@ -115,7 +115,7 @@ RAG/
 
 ## 商品数据
 
-500 条耳机商品，覆盖 32 个品牌、¥50-5570 价格区间。
+1500 条耳机商品，覆盖 37 个品牌、¥50-5570 价格区间。
 
 如需重新生成：
 

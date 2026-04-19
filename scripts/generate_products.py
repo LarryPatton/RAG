@@ -1,5 +1,5 @@
 """
-Generate 500 realistic Chinese headphone product entries.
+Generate 1500 realistic Chinese headphone product entries.
 Output: G:/RAG/data/products.json
 """
 
@@ -26,6 +26,8 @@ BRANDS = {
                 ("WF-C700N", "入耳式", 699, "anc"),
                 ("LinkBuds S", "入耳式", 999, "anc"),
                 ("WF-1000XM5", "入耳式", 1599, "anc"),
+                ("LinkBuds Open", "耳挂式", 1299, "none"),
+                ("Float Run", "耳挂式", 899, "none"),
                 ("WH-CH520", "头戴式", 299, "pnc"),
                 ("WH-1000XM4", "头戴式", 1799, "anc"),
                 ("WH-1000XM5", "头戴式", 1999, "anc"),
@@ -39,8 +41,10 @@ BRANDS = {
                 ("QuietComfort 45", "头戴式", 1999, "anc"),
                 ("QuietComfort Ultra 头戴版", "头戴式", 2499, "anc"),
                 ("QuietComfort Ultra 耳塞版", "入耳式", 2199, "anc"),
+                ("Ultra Open Earbuds", "耳挂式", 1499, "none"),
                 ("SoundLink Flex", "入耳式", 899, "pnc"),
                 ("Sport Earbuds", "入耳式", 699, "pnc"),
+                ("Sport Open Earbuds", "耳挂式", 999, "none"),
             ],
         },
         {
@@ -83,6 +87,7 @@ BRANDS = {
                 ("FreeBuds Pro 3", "入耳式", 999, "anc"),
                 ("FreeBuds Studio 2", "头戴式", 1099, "anc"),
                 ("FreeLace Pro", "入耳式", 399, "anc"),
+                ("FreeClip", "耳挂式", 1099, "none"),
             ],
         },
         {
@@ -102,6 +107,7 @@ BRANDS = {
                 ("Tune 230NC TWS", "入耳式", 399, "anc"),
                 ("Live Free 2 TWS", "入耳式", 599, "anc"),
                 ("Live Pro 2 TWS", "入耳式", 799, "anc"),
+                ("Soundgear Sense", "耳挂式", 799, "none"),
                 ("Tour One M2", "头戴式", 1199, "anc"),
                 ("Tune 770NC", "头戴式", 499, "anc"),
                 ("Tune 510BT", "头戴式", 199, "pnc"),
@@ -126,6 +132,7 @@ BRANDS = {
                 ("SonoFlow Pro", "头戴式", 699, "anc"),
                 ("EVO", "入耳式", 399, "anc"),
                 ("PistonBuds Pro Q30", "入耳式", 249, "anc"),
+                ("Aero 开放式", "耳挂式", 499, "none"),
             ],
         },
     ],
@@ -149,6 +156,7 @@ BRANDS = {
                 ("W360BT", "入耳式", 129, "tnc"),
                 ("NeoBuds Pro", "入耳式", 499, "anc"),
                 ("NeoBuds Pro 2", "入耳式", 699, "anc"),
+                ("Comfo Fit Open", "耳挂式", 299, "none"),
                 ("W820NB Plus", "头戴式", 259, "anc"),
                 ("W860NB", "头戴式", 399, "anc"),
                 ("STAX Spirit S3", "头戴式", 1799, "anc"),
@@ -160,6 +168,8 @@ BRANDS = {
                 ("T13", "入耳式", 79, "pnc"),
                 ("T17S", "入耳式", 99, "tnc"),
                 ("AilyBuds Pro+", "入耳式", 149, "anc"),
+                ("Crossky Link", "耳挂式", 129, "none"),
+                ("Crossky Link 2", "耳挂式", 199, "none"),
                 ("H3", "头戴式", 99, "pnc"),
                 ("HT07 ANC", "头戴式", 149, "anc"),
                 ("HT05 MeloBuds ANC", "入耳式", 199, "anc"),
@@ -194,7 +204,9 @@ BRANDS = {
                 ("OpenRun", "骨传导", 699, "none"),
                 ("OpenRun Pro", "骨传导", 999, "none"),
                 ("OpenRun Pro 2", "骨传导", 1299, "none"),
+                ("OpenRun Mini", "骨传导", 599, "none"),
                 ("OpenSwim", "骨传导", 899, "none"),
+                ("OpenSwim Pro", "骨传导", 1199, "none"),
                 ("OpenFit", "耳挂式", 899, "none"),
                 ("OpenFit Air", "耳挂式", 599, "none"),
             ],
@@ -203,9 +215,36 @@ BRANDS = {
             "brand": "南卡",
             "lines": [
                 ("OE Mix", "耳挂式", 299, "none"),
+                ("OE Mix 2", "耳挂式", 399, "none"),
+                ("OE Pro", "耳挂式", 499, "none"),
                 ("Runner Pro 5", "骨传导", 499, "none"),
+                ("Runner CC 3", "骨传导", 299, "none"),
                 ("Lite3", "骨传导", 299, "none"),
                 ("CC Ultra", "骨传导", 699, "none"),
+            ],
+        },
+        {
+            "brand": "Oladance",
+            "lines": [
+                ("OWS 2", "耳挂式", 999, "none"),
+                ("OWS Pro", "耳挂式", 1299, "none"),
+                ("OWS Sports", "耳挂式", 799, "none"),
+            ],
+        },
+        {
+            "brand": "墨觉",
+            "lines": [
+                ("Run Plus", "骨传导", 499, "none"),
+                ("Mojo 2", "骨传导", 799, "none"),
+                ("HaptiFit Terra", "骨传导", 599, "none"),
+            ],
+        },
+        {
+            "brand": "Cleer",
+            "lines": [
+                ("Arc 开放式", "耳挂式", 999, "none"),
+                ("Arc II Sport", "耳挂式", 799, "none"),
+                ("Arc II Music", "耳挂式", 899, "none"),
             ],
         },
         {
@@ -213,6 +252,21 @@ BRANDS = {
             "lines": [
                 ("Vista 2", "入耳式", 699, "anc"),
                 ("Run XT", "入耳式", 399, "pnc"),
+            ],
+        },
+        {
+            "brand": "Sanag",
+            "lines": [
+                ("A30S Pro", "骨传导", 199, "none"),
+                ("A50S", "骨传导", 299, "none"),
+                ("Z65 Pro", "耳挂式", 149, "none"),
+            ],
+        },
+        {
+            "brand": "Haylou",
+            "lines": [
+                ("PurFree BC01", "骨传导", 399, "none"),
+                ("PurFree Lite", "骨传导", 249, "none"),
             ],
         },
     ],
@@ -225,6 +279,7 @@ BRANDS = {
                 ("Hammerhead True Wireless X", "入耳式", 299, "tnc"),
                 ("Hammerhead Pro HyperSpeed", "入耳式", 699, "anc"),
                 ("Opus X", "头戴式", 499, "anc"),
+                ("Kraken V4", "头戴式", 599, "pnc"),
             ],
         },
         {
@@ -366,7 +421,7 @@ FEATURES_POOL = {
 SCENARIOS_POOL = ["通勤", "运动", "办公", "游戏", "日常", "飞行", "跑步", "骑行", "健身", "学习", "音乐", "会议"]
 
 PLATFORMS = ["京东", "天猫", "拼多多"]
-PLATFORM_WEIGHTS = [0.40, 0.30, 0.30]
+PLATFORM_WEIGHTS = [0.34, 0.33, 0.33]
 
 # ---------------------------------------------------------------------------
 # Description templates
@@ -464,8 +519,8 @@ def pick_features(headphone_type, price, nc_val, brand, n=3):
             pool.append(random.choice(["30小时续航", "40小时续航", "无线充电"]))
         else:
             pool.append(random.choice(["24小时续航", "30小时续航"]))
-    elif headphone_type == "骨传导":
-        pool.append(random.choice(["8小时续航", "10小时续航"]))
+    elif headphone_type in ("骨传导", "耳挂式"):
+        pool.append(random.choice(["8小时续航", "10小时续航", "12小时续航"]))
     else:
         if price >= 500:
             pool.append(random.choice(["8小时续航", "无线充电", "快充10分钟听2小时"]))
@@ -475,6 +530,10 @@ def pick_features(headphone_type, price, nc_val, brand, n=3):
     # Waterproof (earbuds/sport more likely)
     if headphone_type in ("入耳式", "骨传导", "耳挂式"):
         pool.append(random.choice(["IPX4防水", "IPX5防水", "IP54防水防尘"]))
+
+    # Open ear special
+    if headphone_type in ("骨传导", "耳挂式"):
+        pool.append(random.choice(["不入耳设计", "轻量设计", "人体工学"]))
 
     # Gaming extras
     if brand in ("雷蛇", "罗技", "HyperX", "赛睿", "西伯利亚"):
@@ -502,13 +561,14 @@ def pick_features(headphone_type, price, nc_val, brand, n=3):
 
 
 def pick_scenarios(headphone_type, brand, price):
-    """Pick 2 realistic scenarios."""
+    """Pick 2 realistic scenarios with broader distribution."""
     if brand in ("雷蛇", "罗技", "HyperX", "赛睿", "西伯利亚"):
-        return random.sample(["游戏", "日常", "音乐"], 2)
+        return random.sample(["游戏", "日常", "音乐", "学习"], 2)
     if headphone_type in ("骨传导", "耳挂式"):
-        return random.sample(["运动", "跑步", "骑行", "健身", "通勤"], 2)
+        return random.sample(["运动", "跑步", "骑行", "健身", "通勤", "日常"], 2)
     if price >= 1200:
-        return random.sample(["飞行", "音乐", "通勤", "办公"], 2)
+        return random.sample(["飞行", "音乐", "通勤", "办公", "日常"], 2)
+    # General: sample from full pool for even distribution
     return random.sample(SCENARIOS_POOL, 2)
 
 
@@ -551,22 +611,29 @@ for tier_brands in BRANDS.values():
             ALL_LINES.append((brand, model_suffix, htype, base_price, nc_profile))
 
 # ---------------------------------------------------------------------------
+# Type-aware sampling weights
+# ---------------------------------------------------------------------------
+# Give higher weight to underrepresented types (骨传导, 耳挂式)
+TYPE_WEIGHT = {"入耳式": 1.0, "头戴式": 1.0, "骨传导": 2.5, "耳挂式": 2.5}
+LINE_WEIGHTS = [TYPE_WEIGHT.get(line[2], 1.0) for line in ALL_LINES]
+
+# ---------------------------------------------------------------------------
 # Price jitter helpers to hit distribution targets
 # ---------------------------------------------------------------------------
 
 PRICE_BUCKETS = [
-    (50, 100, 30),
-    (100, 200, 80),
-    (200, 300, 80),
-    (300, 500, 100),
-    (500, 800, 80),
-    (800, 1200, 60),
-    (1200, 2000, 50),
-    (2000, 5000, 20),
+    (50, 100, 90),
+    (100, 200, 240),
+    (200, 300, 240),
+    (300, 500, 300),
+    (500, 800, 240),
+    (800, 1200, 180),
+    (1200, 2000, 150),
+    (2000, 5000, 60),
 ]
 
 def jitter_price(base_price):
-    """Add small random variation to base price (±15%) and round to nice number."""
+    """Add small random variation to base price (±12%) and round to nice number."""
     factor = random.uniform(0.88, 1.12)
     raw = base_price * factor
     # Round to nearest 10
@@ -582,31 +649,30 @@ def assign_to_bucket(price):
 
 
 # ---------------------------------------------------------------------------
-# Generate 500 products
+# Generate 1500 products
 # ---------------------------------------------------------------------------
 
-TARGET = 500
+TARGET = 1500
 products = []
 idx = 1
-
-# We'll do multiple passes sampling from ALL_LINES with jitter until we have 500
-# and the bucket distribution is roughly met.
 
 bucket_counts = {(lo, hi): 0 for lo, hi, _ in PRICE_BUCKETS}
 bucket_targets = {(lo, hi): t for lo, hi, t in PRICE_BUCKETS}
 
 attempts = 0
-max_attempts = 20000
+max_attempts = 60000
+
+rng_enrich = random.Random(123)  # separate RNG for stock/prices
 
 while len(products) < TARGET and attempts < max_attempts:
     attempts += 1
-    brand, model, htype, base_price, nc_profile = random.choice(ALL_LINES)
+    brand, model, htype, base_price, nc_profile = random.choices(ALL_LINES, weights=LINE_WEIGHTS, k=1)[0]
 
     price = jitter_price(base_price)
     bucket = assign_to_bucket(price)
 
     # Soft-enforce bucket targets: skip if bucket already over-full
-    if bucket_counts[bucket] >= bucket_targets[bucket] * 1.6:
+    if bucket_counts[bucket] >= bucket_targets[bucket] * 1.3:
         continue
 
     nc_val = pick_nc(nc_profile, htype, price)
@@ -617,6 +683,14 @@ while len(products) < TARGET and attempts < max_attempts:
     rating = round(random.uniform(3.8, 4.9), 1)
     platform = random.choices(PLATFORMS, weights=PLATFORM_WEIGHTS, k=1)[0]
 
+    # Stock and cross-platform prices (previously in enrich_products.py)
+    stock = rng_enrich.randint(0, 100)
+    other_platforms = [pl for pl in PLATFORMS if pl != platform]
+    other_prices = {}
+    for pl in other_platforms:
+        multiplier = rng_enrich.uniform(0.85, 1.15)
+        other_prices[pl] = round(int(price) * multiplier)
+
     product = {
         "id": f"hp_{idx:03d}",
         "name": f"{brand} {model} {htype}耳机",
@@ -630,6 +704,8 @@ while len(products) < TARGET and attempts < max_attempts:
         "scenario": scenarios,
         "noise_cancellation": nc_val,
         "description": desc,
+        "stock": stock,
+        "other_platform_prices": other_prices,
     }
     products.append(product)
     bucket_counts[bucket] += 1
@@ -637,7 +713,7 @@ while len(products) < TARGET and attempts < max_attempts:
 
 # If somehow we're short, fill up without bucket restrictions
 while len(products) < TARGET:
-    brand, model, htype, base_price, nc_profile = random.choice(ALL_LINES)
+    brand, model, htype, base_price, nc_profile = random.choices(ALL_LINES, weights=LINE_WEIGHTS, k=1)[0]
     price = jitter_price(base_price)
     nc_val = pick_nc(nc_profile, htype, price)
     features = pick_features(htype, price, nc_val, brand, n=random.randint(3, 5))
@@ -645,6 +721,12 @@ while len(products) < TARGET:
     desc = make_description(brand, model, htype, price, features, scenarios, nc_val)
     rating = round(random.uniform(3.8, 4.9), 1)
     platform = random.choices(PLATFORMS, weights=PLATFORM_WEIGHTS, k=1)[0]
+    stock = rng_enrich.randint(0, 100)
+    other_platforms = [pl for pl in PLATFORMS if pl != platform]
+    other_prices = {}
+    for pl in other_platforms:
+        multiplier = rng_enrich.uniform(0.85, 1.15)
+        other_prices[pl] = round(int(price) * multiplier)
     product = {
         "id": f"hp_{idx:03d}",
         "name": f"{brand} {model} {htype}耳机",
@@ -658,16 +740,18 @@ while len(products) < TARGET:
         "scenario": scenarios,
         "noise_cancellation": nc_val,
         "description": desc,
+        "stock": stock,
+        "other_platform_prices": other_prices,
     }
     products.append(product)
     idx += 1
 
-# Trim to exactly 500 just in case
+# Trim to exactly TARGET just in case
 products = products[:TARGET]
 
-# Re-assign IDs sequentially
+# Re-assign IDs sequentially (use 4-digit for 1500)
 for i, p in enumerate(products, start=1):
-    p["id"] = f"hp_{i:03d}"
+    p["id"] = f"hp_{i:04d}"
 
 # ---------------------------------------------------------------------------
 # Write output
@@ -693,7 +777,7 @@ for p in products:
 print("\nPrice bucket distribution:")
 for lo, hi, target in PRICE_BUCKETS:
     count = bucket_summary.get((lo, hi), 0)
-    print(f"  ¥{lo:>5}-{hi:<5}: {count:>3} (target {target})")
+    print(f"  {lo:>5}-{hi:<5}: {count:>3} (target {target})")
 
 brands_found = set(p["brand"] for p in products)
 print(f"\nBrands represented: {len(brands_found)}")
@@ -701,3 +785,10 @@ types_c = Counter(p["type"] for p in products)
 print("Type distribution:", dict(types_c))
 nc_c = Counter(p["noise_cancellation"] for p in products)
 print("Noise cancellation:", dict(nc_c))
+scenario_c = Counter()
+for p in products:
+    for s in p["scenario"]:
+        scenario_c[s] += 1
+print("Scenario distribution:", dict(scenario_c.most_common()))
+platform_c = Counter(p["platform"] for p in products)
+print("Platform distribution:", dict(platform_c))

@@ -28,11 +28,11 @@ def create_product_search_tool(index: VectorStoreIndex):
             if len(type_filtered) >= 3:
                 nodes = type_filtered
 
-        # Filter by budget
+        # Filter by budget (hard filter — never return over-budget products)
         if max_price:
-            budget_filtered = [n for n in nodes if n.metadata.get("price", 0) <= max_price]
-            if len(budget_filtered) >= 3:
-                nodes = budget_filtered
+            nodes = [n for n in nodes if n.metadata.get("price", 0) <= max_price]
+            if not nodes:
+                return f"未找到 ¥{max_price} 以内的匹配商品。请尝试提高预算或放宽其他条件。"
 
         # Sort by relevance score (already sorted) then return top 8
         results = []
@@ -58,6 +58,10 @@ def _extract_type(query: str) -> str | None:
         return "头戴式"
     if re.search(r"入耳", query):
         return "入耳式"
+    if re.search(r"骨传导", query):
+        return "骨传导"
+    if re.search(r"耳挂|开放式", query):
+        return "耳挂式"
     if re.search(r"颈挂", query):
         return "颈挂式"
     return None

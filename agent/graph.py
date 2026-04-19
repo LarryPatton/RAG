@@ -10,12 +10,21 @@ from typing_extensions import TypedDict
 from agent.prompts import SYSTEM_PROMPT
 
 # Required user-provided fields before tool calls are allowed
-REQUIRED_FIELDS = {"budget", "type", "scenario"}
+REQUIRED_FIELDS = {"budget", "type", "scenario", "noise_cancellation", "brand_preference"}
 
-MISSING_LABELS = {"budget": "预算范围", "type": "耳机类型", "scenario": "使用场景"}
+MISSING_LABELS = {
+    "budget": "预算范围",
+    "type": "耳机类型",
+    "scenario": "使用场景",
+    "noise_cancellation": "降噪需求",
+    "brand_preference": "品牌偏好",
+}
+
+# At least this many fields must be confirmed before allowing tool calls
+MIN_CONFIRMED_FIELDS = 3
 
 # Max times the gate can bounce back to model before giving up
-MAX_GATE_RETRIES = 2
+MAX_GATE_RETRIES = 3
 
 
 class ShoppingState(TypedDict):
@@ -25,7 +34,7 @@ class ShoppingState(TypedDict):
 def extract_confirmed_info(messages: list) -> dict[str, bool]:
     """Extract confirmed user decisions from conversation history.
 
-    Scans all HumanMessage instances for user-provided budget, type, and scenario.
+    Scans all HumanMessage instances for user-provided info across 5 dimensions.
     Also parses decision prefixes injected by the backend.
     """
     confirmed = {}
@@ -43,6 +52,10 @@ def extract_confirmed_info(messages: list) -> dict[str, bool]:
                 confirmed["budget"] = True
             if "使用场景:" in content or "使用场景：" in content:
                 confirmed["scenario"] = True
+            if "降噪需求:" in content or "降噪需求：" in content:
+                confirmed["noise_cancellation"] = True
+            if "品牌偏好:" in content or "品牌偏好：" in content:
+                confirmed["brand_preference"] = True
             # Fall through to also parse user text after prefix
 
         # Only parse user messages
@@ -51,17 +64,28 @@ def extract_confirmed_info(messages: list) -> dict[str, bool]:
 
         text = content.strip()
 
-        # Budget: numbers that look like prices (50-10000), with optional unit
-        if re.search(r"\d{2,5}\s*(元|以内|块|预算|左右)?", text) or re.search(r"\d+-\d+", text):
+        # Budget: must have a number + price indicator, not just bare numbers
+        if re.search(r"\d{2,5}\s*(元|块钱?)\s*(以内|以下|左右|以上)?", text) or \
+           re.search(r"\d{2,5}\s*(以内|以下|左右|以上)", text) or \
+           re.search(r"预算\s*\d{2,5}", text) or \
+           re.search(r"\d{3,5}\s*[-~到]\s*\d{3,5}", text):
             confirmed["budget"] = True
 
-        # Type: earphone form factor
-        if re.search(r"入耳|头戴|颈挂", text):
+        # Type: earphone form factor (all 4 types)
+        if re.search(r"入耳|头戴|颈挂|骨传导|耳挂|开放式", text):
             confirmed["type"] = True
 
         # Scenario: usage context
-        if re.search(r"通勤|运动|跑步|办公|游戏|音乐|睡眠|学习", text):
+        if re.search(r"通勤|运动|跑步|办公|游戏|音乐|睡眠|学习|骑行|健身|飞行|会议", text):
             confirmed["scenario"] = True
+
+        # Noise cancellation
+        if re.search(r"降噪|不需要降噪|不用降噪|需要降噪|都可以.*噪|ANC", text):
+            confirmed["noise_cancellation"] = True
+
+        # Brand preference
+        if re.search(r"国产|国际|品牌|没有偏好|无所谓|Sony|Bose|华为|小米|JBL|森海|铁三角|韶音|南卡", text, re.IGNORECASE):
+            confirmed["brand_preference"] = True
 
     return confirmed
 
@@ -87,12 +111,17 @@ def create_shopping_agent(llm, tools: list):
         return {"messages": [response]}
 
     def gate_node(state: ShoppingState):
+        """Gate: check if enough user info is confirmed before allowing tool calls.
+
+        Returns empty messages list to pass through (preserving the AIMessage with tool_calls),
+        or returns [clean_AIMessage, SystemMessage feedback] to block and bounce back to model.
+        """
         confirmed = extract_confirmed_info(state["messages"])
         missing = REQUIRED_FIELDS - confirmed.keys()
+        num_confirmed = len(confirmed)
 
-        if not missing:
-            # All required info present — allow tool calls through
-            # Return empty update = no-op, state unchanged, last msg still has tool_calls
+        # Allow tools if all dimensions covered OR at least MIN_CONFIRMED_FIELDS confirmed
+        if not missing or num_confirmed >= MIN_CONFIRMED_FIELDS:
             return {"messages": []}
 
         # Count how many times we've already bounced back
@@ -101,7 +130,6 @@ def create_shopping_agent(llm, tools: list):
             if isinstance(m, SystemMessage) and "[系统拦截]" in getattr(m, "content", "")
         )
         if gate_count >= MAX_GATE_RETRIES:
-            # Give up — let tools through to avoid infinite loop
             return {"messages": []}
 
         # Missing info — block tool calls, send LLM back to ask user
@@ -119,7 +147,7 @@ def create_shopping_agent(llm, tools: list):
         last_msg = state["messages"][-1]
         clean_msg = AIMessage(
             content=last_msg.content if hasattr(last_msg, "content") else "",
-            id=last_msg.id,  # Same ID → replaces original in add_messages reducer
+            id=last_msg.id,
         )
 
         return {"messages": [clean_msg, feedback]}
@@ -133,9 +161,8 @@ def create_shopping_agent(llm, tools: list):
     def gate_decision(state: ShoppingState):
         last = state["messages"][-1]
         if isinstance(last, SystemMessage) and "[系统拦截]" in last.content:
-            # Gate injected feedback — go back to model
             return "model"
-        # Gate passed through (empty update) — last msg still has tool_calls → tools
+        # Empty update from gate → last msg is still AIMessage with tool_calls → tools
         return "tools"
 
     # Build the graph

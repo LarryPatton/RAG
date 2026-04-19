@@ -57,7 +57,7 @@ def build_index(products: list[dict]) -> VectorStoreIndex:
     """Build a vector index from product data.
 
     Uses a disk cache for pre-computed embeddings:
-    - First build: computes embeddings (~30s for 500 products), saves to ./index_cache/
+    - First build: computes embeddings (~90s for 1500 products), saves to ./index_cache/
     - Subsequent builds: loads cached embeddings (~2s)
 
     Always uses in-memory Qdrant (no persistence issues).

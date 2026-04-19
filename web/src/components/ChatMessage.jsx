@@ -14,6 +14,18 @@ const INLINE_STAGE_REGEX = new RegExp(`\\[(${STAGE_LABELS.join('|')})\\]\\s*`, '
 // Intermediate stages = AI thinking, not user-facing answers
 const THINKING_STAGES = new Set(['分析中', '搜索中'])
 
+/** Fallback: infer quick replies from assistant text when LLM forgets to output JSON */
+function inferQuickReplies(text, stageTag) {
+  if (!text || (stageTag && !['意图澄清'].includes(stageTag))) return null
+  const t = text.toLowerCase()
+  if (/预算|多少钱|价位|价格/.test(t)) return ['200以内', '200-500', '500-1000', '1000以上']
+  if (/类型|入耳|头戴|耳机.*什么/.test(t)) return ['入耳式', '头戴式', '骨传导', '耳挂式']
+  if (/场景|用途|做什么|什么.*用/.test(t)) return ['通勤', '运动', '办公', '游戏']
+  if (/降噪|噪音|ANC/.test(t)) return ['需要降噪', '不需要', '都可以']
+  if (/品牌|牌子/.test(t)) return ['国产优先', '国际品牌', '没有偏好']
+  return null
+}
+
 function parseStageTag(text) {
   if (!text) return { stage: null, cleanText: text }
   const match = text.match(STAGE_REGEX)
@@ -156,9 +168,9 @@ export default function ChatMessage({ role, text, structuredData, taskPlan, thin
           </div>
         )}
 
-        {/* Quick reply buttons */}
-        {!isUser && !streaming && quickReplies && (
-          <QuickReplies options={quickReplies} onSelect={onSend} disabled={loading} />
+        {/* Quick reply buttons — use AI-provided or auto-generate fallback */}
+        {!isUser && !streaming && (quickReplies || inferQuickReplies(displayText, stageTag)) && (
+          <QuickReplies options={quickReplies || inferQuickReplies(displayText, stageTag)} onSelect={onSend} disabled={loading} />
         )}
       </div>
     </div>

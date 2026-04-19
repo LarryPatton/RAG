@@ -14,7 +14,15 @@ export async function sendMessage(message, history, llmMode) {
  * Stream a chat message via SSE.
  * Calls onEvent(event) for each parsed SSE event until "done".
  * Pass an AbortSignal to cancel the stream.
+ * Throws StreamStallError if no data received for STALL_TIMEOUT_MS.
  */
+
+export class StreamStallError extends Error {
+  constructor() { super('Stream stalled — no data received for 30s') }
+}
+
+const STALL_TIMEOUT_MS = 30_000
+
 export async function streamMessage(message, history, llmMode, onEvent, signal, userDecisions) {
   const res = await fetch(`${BASE}/chat/stream`, {
     method: 'POST',
@@ -29,9 +37,23 @@ export async function streamMessage(message, history, llmMode, onEvent, signal, 
   let buffer = ''
   let receivedDone = false
 
+  /** Read with a stall timeout — rejects if no chunk arrives within STALL_TIMEOUT_MS */
+  function readWithTimeout() {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reader.cancel().catch(() => {})
+        reject(new StreamStallError())
+      }, STALL_TIMEOUT_MS)
+      reader.read().then(
+        (result) => { clearTimeout(timer); resolve(result) },
+        (err)    => { clearTimeout(timer); reject(err) },
+      )
+    })
+  }
+
   try {
     while (true) {
-      const { done, value } = await reader.read()
+      const { done, value } = await readWithTimeout()
       if (done) break
       buffer += decoder.decode(value, { stream: true })
 

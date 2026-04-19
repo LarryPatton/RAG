@@ -22,7 +22,7 @@ class ChatRequest(BaseModel):
     message: str = Field(max_length=2000)
     history: list[HistoryMessage] = Field(default=[], max_length=50)
     llm_mode: str = "ollama"
-    user_decisions: dict[str, str] = {}
+    user_decisions: dict[str, str] | None = None
 
 
 class ChatResponse(BaseModel):
@@ -42,7 +42,7 @@ async def chat(req: ChatRequest):
         message=req.message,
         history=history_dicts,
         llm_mode=req.llm_mode,
-        user_decisions=req.user_decisions,
+        user_decisions=req.user_decisions or {},
     )
     return ChatResponse(**result)
 
@@ -59,7 +59,7 @@ async def chat_stream(req: ChatRequest):
                 message=req.message,
                 history=history_dicts,
                 llm_mode=req.llm_mode,
-                user_decisions=req.user_decisions,
+                user_decisions=req.user_decisions or {},
             ):
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                 if event.get("type") == "done":

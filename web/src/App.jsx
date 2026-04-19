@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import Header from './components/Header'
 import ChatPanel from './components/ChatPanel'
 import DecisionPanel from './components/DecisionPanel'
-import { streamMessage } from './api/client'
+import { streamMessage, StreamStallError } from './api/client'
 import { STAGE_ORDER } from './constants/stages'
 
 /** Extract decisions from user message text in real-time. */
@@ -12,10 +12,15 @@ function parseUserDecisions(text) {
   const parts = text.split('+').map(p => p.trim()).filter(Boolean)
   const t = text.trim()
 
-  // Type: 入耳式 / 头戴式 / 颈挂式
-  if (/入耳/.test(t)) decisions.type = '入耳式'
-  else if (/头戴/.test(t)) decisions.type = '头戴式'
-  else if (/颈挂/.test(t)) decisions.type = '颈挂式'
+  // Type: collect all matching types from all parts
+  const typeMap = { '入耳': '入耳式', '头戴': '头戴式', '颈挂': '颈挂式', '骨传导': '骨传导', '耳挂': '耳挂式', '开放式': '耳挂式' }
+  const matchedTypes = []
+  for (const part of parts) {
+    for (const [kw, val] of Object.entries(typeMap)) {
+      if (part.includes(kw) && !matchedTypes.includes(val)) matchedTypes.push(val)
+    }
+  }
+  if (matchedTypes.length > 0) decisions.type = matchedTypes.join('、')
 
   // Budget: collect all numbers, take the widest range
   const allNumbers = []
@@ -59,12 +64,18 @@ function parseUserDecisions(text) {
   if (matched.length > 0) decisions.scenario = matched.join('、')
 
   // Noise cancellation
-  if (/降噪|主动降噪|ANC/.test(t)) decisions.noise_cancellation = '需要降噪'
+  if (/不需要|不用降噪|都可以/.test(t)) decisions.noise_cancellation = '不需要'
+  else if (/降噪|主动降噪|ANC|需要降噪/.test(t)) decisions.noise_cancellation = '需要降噪'
 
   // Brand
-  const brands = ['Sony', 'Bose', 'AKG', 'JBL', '华为', '小米', 'OPPO', 'vivo', '三星', '森海塞尔', '铁三角', 'Beats', '漫步者', 'FIIL', '万魔', '魅族', 'Jabra', 'Nothing']
-  for (const b of brands) {
-    if (t.toLowerCase().includes(b.toLowerCase())) { decisions.brand_preference = b; break }
+  if (/国产优先|国产品牌/.test(t)) { decisions.brand_preference = '国产优先' }
+  else if (/国际品牌/.test(t)) { decisions.brand_preference = '国际品牌' }
+  else if (/没有偏好|都可以|无所谓/.test(t) && !decisions.noise_cancellation) { decisions.brand_preference = '无偏好' }
+  else {
+    const brands = ['Sony', 'Bose', 'AKG', 'JBL', '华为', '小米', 'OPPO', 'vivo', '三星', '森海塞尔', '铁三角', 'Beats', '漫步者', '万魔', '魅族', 'Nothing', '韶音', '南卡', 'Oladance', 'Cleer', '雷蛇', '罗技', 'HyperX', 'Marshall', 'QCY']
+    for (const b of brands) {
+      if (t.toLowerCase().includes(b.toLowerCase())) { decisions.brand_preference = b; break }
+    }
   }
 
   return Object.keys(decisions).length > 0 ? decisions : null
@@ -97,7 +108,7 @@ export default function App() {
     const controller = new AbortController()
     abortRef.current = controller
 
-    const history = messagesRef.current.map((m) => ({ role: m.role, content: m.text }))
+    const history = messagesRef.current.map((m) => ({ role: m.role, content: m.text || '' }))
     const userMsg = { id: crypto.randomUUID(), role: 'user', text, structuredData: null, taskPlan: null, thinkingSteps: [], quickReplies: null }
     // Seed the assistant message as empty — we'll stream into it
     const assistantSeed = { id: crypto.randomUUID(), role: 'assistant', text: '', structuredData: null, taskPlan: null, thinkingSteps: [], streaming: true, quickReplies: null }
@@ -114,22 +125,35 @@ export default function App() {
     // Merge current + extracted decisions for this request (state update is async)
     const mergedDecisions = { ...userDecisionsRef.current, ...extracted }
 
-    try {
-      await streamMessage(text, history, llmMode, (event) => {
-        // Ignore events if this stream was aborted
-        if (controller.signal.aborted) return
+    const MAX_RETRIES = 2
+    let attempt = 0
 
-        switch (event.type) {
-          case 'token':
-            setMessages((prev) => {
-              const msgs = [...prev]
-              const last = msgs[msgs.length - 1]
-              msgs[msgs.length - 1] = { ...last, text: last.text + event.content }
-              return msgs
-            })
-            // Advance stage to at least 意图澄清 once LLM starts responding
-            setStage((prev) => prev === '等待输入' ? '意图澄清' : prev)
-            break
+    while (attempt <= MAX_RETRIES) {
+      try {
+        // Reset assistant message on retry (keep user message intact)
+        if (attempt > 0) {
+          setMessages((prev) => {
+            const msgs = [...prev]
+            msgs[msgs.length - 1] = { ...assistantSeed, text: `(第${attempt + 1}次尝试) ` }
+            return msgs
+          })
+        }
+
+        await streamMessage(text, history, llmMode, (event) => {
+          // Ignore events if this stream was aborted
+          if (controller.signal.aborted) return
+
+          switch (event.type) {
+            case 'token':
+              setMessages((prev) => {
+                const msgs = [...prev]
+                const last = msgs[msgs.length - 1]
+                msgs[msgs.length - 1] = { ...last, text: last.text + event.content }
+                return msgs
+              })
+              // Advance stage to at least 意图澄清 once LLM starts responding
+              setStage((prev) => prev === '等待输入' ? '意图澄清' : prev)
+              break
 
           case 'tool_start':
             setMessages((prev) => {
@@ -223,7 +247,8 @@ export default function App() {
               const msgs = [...prev]
               const last = msgs[msgs.length - 1]
               // Replace raw accumulated text with backend-cleaned text (strips JSON blocks)
-              const cleanText = event.clean_text ?? last.text
+              // Use fallback to accumulated text if clean_text is empty (LLM only output JSON)
+              const cleanText = event.clean_text || last.text
               msgs[msgs.length - 1] = { ...last, text: cleanText, streaming: false }
               return msgs
             })
@@ -240,15 +265,23 @@ export default function App() {
             break
         }
       }, controller.signal, mergedDecisions)
-    } catch (err) {
-      // Silently ignore abort errors
-      if (err.name === 'AbortError') return
-      setMessages((prev) => {
-        const msgs = [...prev]
-        msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], text: `错误: ${err.message}`, streaming: false }
-        return msgs
-      })
-      setLoading(false)
+        // Success — break out of retry loop
+        break
+      } catch (err) {
+        // Silently ignore abort errors
+        if (err.name === 'AbortError') return
+        // Retry on stall
+        if (err instanceof StreamStallError && attempt < MAX_RETRIES) {
+          attempt++
+          continue
+        }
+        setMessages((prev) => {
+          const msgs = [...prev]
+          msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], text: `错误: ${err.message}`, streaming: false }
+          return msgs
+        })
+        setLoading(false)
+      }
     }
   }, [llmMode])
 
